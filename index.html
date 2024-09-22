@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Latihan Pemrograman Sisi Klien">
+    <meta name="keywords" content="HTML, CSS, JavaScript">
+    <meta name="author" content="David Sugiarto">        
+    <title>Admin Panel By Kyuu</title>
+    <style>
+        /* Gaya umum untuk halaman */
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        /* Bikin kontainer jadi kolom vertikal */
+        .container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Gaya untuk header di bagian atas */
+        header {
+            background-color: coral;
+            text-align: right;
+            padding: 10px;
+        }
+
+        /* Gaya untuk bagian utama yang ada konten dan sidebar */
+        .main {
+            display: flex;
+            background-color: aquamarine;
+        }
+        
+        /* Gaya untuk sidebar (navigasi di samping) */
+        aside {
+            background-color: aqua;
+            width: 200px;
+            padding: 10px;
+        }
+
+        /* Gaya buat footer di bawah halaman */
+        footer {
+            background-color: coral;
+            padding: 10px;
+            text-align: center;
+        }
+
+        /* Konten utama di tengah */
+        .content {
+            padding: 10px;
+            background-color: darkgrey;
+            flex: 1;
+        }
+
+        /* Gaya tabel biar rapi */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        /* Bikin tabel ada garis-garis di antara sel */
+        table, th, td {
+            border: 1px solid #333;
+        }
+
+        /* Gaya padding dan teks dalam sel tabel */
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        /* Modal overlay untuk form tambah/edit mahasiswa */
+        .modal-overlay {
+            position: fixed;
+            display: none;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(0, 0, 0, 0.5); /* Bikin overlay gelap */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Gaya buat modal form */
+        .modal {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+            max-width: 100%;
+        }
+
+        /* Biar form terlihat vertikal */
+        .modal form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Margin antar elemen dalam form */
+        .modal form div {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header dengan tombol Logout -->
+        <header>
+            <button>Logout</button>
+        </header>
+        
+        <div class="main">
+            <!-- Sidebar buat navigasi admin -->
+            <aside>
+                <h2>Admin Panel</h2>
+                <nav>
+                    <ul>
+                        <li><a href="#">Dashboard</a></li>
+                        <li><a href="#">Mahasiswa</a></li>
+                        <li><a href="#">Setting</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <!-- Konten utama di tengah -->
+            <div class="content">
+                <h2>Daftar Mahasiswa</h2>
+                <button id="btn-tambah">Tambah Mahasiswa</button>
+
+                <!-- Tabel daftar mahasiswa -->
+                <table>
+                    <thead>
+                        <th>No</th>
+                        <th>NIM</th>
+                        <th>Nama</th>
+                        <th>Opsi</th>
+                    </thead>
+                    <tbody id="mahasiswa-list">
+                        <tr>
+                            <td>1</td>
+                            <td>A123</td>
+                            <td>Ali</td>
+                            <td>
+                                <button class="btn-edit">Edit</button>
+                                <button class="btn-hapus">Hapus</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>A456</td>
+                            <td>Bagas</td>
+                            <td>
+                                <button class="btn-edit">Edit</button>
+                                <button class="btn-hapus">Hapus</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>A789</td>
+                            <td>Rije</td>
+                            <td>
+                                <button class="btn-edit">Edit</button>
+                                <button class="btn-hapus">Hapus</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer di bagian bawah halaman -->
+        <footer>
+            &copy; 2024 Kyuusha
+        </footer>
+    </div>
+    
+    <!-- Modal form tambah/edit mahasiswa -->
+    <div id="modal-tambah" class="modal-overlay">
+        <div class="modal">
+            <h2 id="modal-title">Tambah Mahasiswa</h2>
+            <form id="form-mahasiswa">
+                <label for="name">Nama: </label>
+                <input type="text" id="name" required>
+                <label for="nim">NIM: </label>
+                <input type="text" id="nim" required>
+                <div>
+                    <button type="submit">Simpan</button>
+                    <button type="button" id="btn-close">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Ambil referensi elemen penting
+        const btnTambah = document.getElementById('btn-tambah');
+        const modalTambah = document.getElementById('modal-tambah');
+        const btnClose = document.getElementById('btn-close');
+        const formMahasiswa = document.getElementById('form-mahasiswa');
+        const mahasiswaList = document.getElementById('mahasiswa-list');
+        let editMode = false; // Biar tahu lagi mode edit atau tambah
+        let currentEditRow = null; // Simpan row yang lagi di-edit
+
+        // Event ketika tombol "Tambah Mahasiswa" diklik
+        btnTambah.addEventListener('click', () => {
+            openModal('Tambah Mahasiswa'); // Buka modal tambah
+            formMahasiswa.reset(); // Reset form biar kosong
+            editMode = false; // Ubah jadi mode tambah
+        });
+
+        // Event untuk tombol edit di daftar mahasiswa
+        mahasiswaList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-edit')) {
+                const row = e.target.closest('tr'); // Ambil row yang mau di-edit
+                const nama = row.children[2].textContent; // Ambil nama dari kolom ke-3
+                const nim = row.children[1].textContent; // Ambil NIM dari kolom ke-2
+
+                openModal('Edit Mahasiswa'); // Buka modal untuk edit
+                document.getElementById('name').value = nama; // Isi form dengan data yang ada
+                document.getElementById('nim').value = nim;
+
+                editMode = true; // Mode edit aktif
+                currentEditRow = row; // Simpan row yang lagi diedit
+            }
+        });
+
+        // Event untuk tombol hapus di daftar mahasiswa
+        mahasiswaList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('btn-hapus')) {
+                const row = e.target.closest('tr'); // Ambil row yang mau dihapus
+                if (confirm(`Apakah Anda yakin ingin menghapus mahasiswa ${row.children[2].textContent}?`)) {
+                    row.remove(); // Hapus row kalau user sudah confirm
+                }
+            }
+        });
+
+        // Event untuk submit form mahasiswa (baik tambah atau edit)
+        formMahasiswa.addEventListener('submit', (e) => {
+            e.preventDefault(); // Stop submit default
+            const nama = document.getElementById('name').value; // Ambil nilai dari input nama
+            const nim = document.getElementById('nim').value; // Ambil nilai dari input NIM
+
+            if (editMode) {
+                // Kalau lagi edit, update nilai di row yang dipilih
+                currentEditRow.children[1].textContent = nim;
+                currentEditRow.children[2].textContent = nama;
+            } else {
+                // Kalau mode tambah, buat row baru
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${mahasiswaList.children.length + 1}</td>
+                    <td>${nim}</td>
+                    <td>${nama}</td>
+                    <td>
+                        <button class="btn-edit">Edit</button>
+                        <button class="btn-hapus">Hapus</button>
+                    </td>
+                `;
+                mahasiswaList.appendChild(newRow); // Tambahin row baru ke tabel
+            }
+
+            closeModal(); // Tutup modal setelah form disubmit
+        });
+
+        // Fungsi untuk buka modal
+        function openModal(title) {
+            document.getElementById('modal-title').textContent = title; // Set judul modal
+            modalTambah.style.display = 'flex'; // Bikin modal muncul
+        }
+
+        // Fungsi untuk tutup modal
+        function closeModal() {
+            modalTambah.style.display = 'none'; // Bikin modal hilang
+        }
+
+        // Event untuk tombol batal di modal
+        btnClose.addEventListener('click', closeModal);
+    </script>
+</body>
+</html>
